@@ -11,7 +11,6 @@
   gtag('js',new Date()); gtag('config','G-JRT5194T61');
   function ga(action,label,value){gtag('event',action,{event_category:'loto',event_label:label,value:value||0});}
 </script>
-<!-- Open Graph / WhatsApp preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="לוטו חכם 🎱 — מספרים מבוססי סטטיסטיקה">
 <meta property="og:description" content="צור שורת לוטו חכמה המבוססת על ניתוח היסטורי של הגרלות קודמות. אסטרטגיות חמים, בתורם וחכם.">
@@ -101,6 +100,8 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
 .why-reason{font-size:10px;color:#777;line-height:1.5}
 .why-bar{height:4px;background:#eee;border-radius:2px;margin-top:5px;overflow:hidden}
 .why-fill{height:100%;background:#e53935;border-radius:2px;transition:width 1.2s ease;width:0}
+
+/* ── Modal ── */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s}
 .modal-bg.open{opacity:1;pointer-events:all}
 .modal{background:#fff;border-radius:20px;padding:28px 22px;max-width:360px;width:100%;text-align:center;transform:translateY(30px);transition:transform .25s}
@@ -110,12 +111,22 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
 .modal-sub{font-size:13px;color:#666;margin-bottom:20px;line-height:1.7}
 .modal-price{font-size:32px;font-weight:900;color:#e53935;margin-bottom:6px}
 .modal-price-sub{font-size:11px;color:#aaa;margin-bottom:22px}
-.modal-pay-btn{display:block;width:100%;padding:15px;background:#e53935;color:#fff;border:none;border-radius:50px;font-family:'Heebo',sans-serif;font-size:17px;font-weight:900;cursor:pointer;margin-bottom:10px}
+
+/* Stripe pay button */
+.stripe-pay-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:15px;background:#635bff;color:#fff;border:none;border-radius:50px;font-family:'Heebo',sans-serif;font-size:17px;font-weight:900;cursor:pointer;margin-bottom:10px;text-decoration:none;transition:background .2s}
+.stripe-pay-btn:hover{background:#4b44d4}
+.stripe-logo{font-size:13px;opacity:.85;font-weight:400;letter-spacing:.5px}
+
 .modal-cancel{font-size:13px;color:#aaa;cursor:pointer;text-decoration:underline}
 .modal-success{display:none;flex-direction:column;align-items:center;gap:10px}
 .modal-success.show{display:flex}
 .modal-form.hide{opacity:0;pointer-events:none;height:0;overflow:hidden}
 .check-circle{width:70px;height:70px;background:#43a047;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;animation:bpop .5s cubic-bezier(.34,1.56,.64,1)}
+
+/* Stripe badge */
+.stripe-badge{display:flex;align-items:center;justify-content:center;gap:5px;margin-top:6px;font-size:11px;color:#aaa}
+.stripe-badge svg{width:38px;opacity:.5}
+
 .disclaimer{text-align:center;font-size:11px;color:#aaa;padding:12px 16px 36px;line-height:2}
 </style>
 </head>
@@ -186,17 +197,53 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
 </div>
 </div>
 
+<!-- ══════════════ MODAL עם Stripe ══════════════ -->
 <div class="modal-bg" id="modal-bg" onclick="bgClose(event)">
   <div class="modal">
     <div class="modal-form" id="modal-form">
       <div class="modal-icon">🎱</div>
       <div class="modal-title">חשוף את השורה שלך</div>
-      <div class="modal-sub">תשלום חד-פעמי, מאובטח.<br>המספרים יחשפו מיד לאחר התשלום.</div>
+      <div class="modal-sub">תשלום חד-פעמי, מאובטח ב-Stripe.<br>המספרים יחשפו מיד לאחר התשלום.</div>
       <div class="modal-price">₪5</div>
-      <div class="modal-price-sub">לשורה אחת</div>
-      <button class="modal-pay-btn" id="pay-now-btn" onclick="simulatePay()">💳 שלם ₪5 עכשיו</button>
-      <div class="modal-cancel" onclick="closeModal()">ביטול</div>
+      <div class="modal-price-sub">לשורה אחת · ללא חיובים נוספים</div>
+
+      <!--
+        ⬇️ החלף את ה-href בקישור Payment Link שלך מ-Stripe:
+           dashboard.stripe.com/payment-links → צור קישור → העתק URL
+           לדוגמה: https://buy.stripe.com/test_XXXXXXXX
+
+        הוסף ?client_reference_id= כדי לזהות עסקה (אופציונלי)
+        לאחר תשלום Stripe תפנה אוטומטית לדף success_url שתגדיר שם.
+      -->
+      <a id="stripe-link"
+         href="https://buy.stripe.com/test_5kQdR93Er42915meqn9Zm00"
+         target="_blank"
+         class="stripe-pay-btn"
+         onclick="onStripeClick()">
+        💳 שלם ₪5 עכשיו
+        <span class="stripe-logo">| Stripe</span>
+      </a>
+
+      <!-- כפתור "שילמתי" — המשתמש לוחץ אחרי חזרה מ-Stripe -->
+      <div id="confirm-wrap" style="display:none;margin-top:12px">
+        <div style="font-size:12px;color:#888;margin-bottom:8px">סיימת את התשלום? לחצ/י לחשיפה:</div>
+        <button onclick="revealAfterPayment()"
+          style="width:100%;padding:12px;background:#43a047;color:#fff;border:none;border-radius:50px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:900;cursor:pointer">
+          ✅ חשוף את המספרים
+        </button>
+      </div>
+
+      <div class="stripe-badge">
+        <svg viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="0" y="20" font-size="18" fill="#635bff" font-family="Arial" font-weight="bold">stripe</text>
+        </svg>
+        <span>תשלום מאובטח</span>
+      </div>
+      <div style="margin-top:10px">
+        <span class="modal-cancel" onclick="closeModal()">ביטול</span>
+      </div>
     </div>
+
     <div class="modal-success" id="modal-success">
       <div class="check-circle">✓</div>
       <div style="font-size:18px;font-weight:900;color:#2e7d32">התשלום התקבל!</div>
@@ -206,6 +253,13 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
 </div>
 
 <script>
+// ══════════════════════════════════════════════
+//  ⬇️  הגדרות — שנה רק כאן
+// ══════════════════════════════════════════════
+const STRIPE_PAYMENT_LINK = 'https://buy.stripe.com/test_5kQdR93Er42915meqn9Zm00';
+// לאחר שתיצרי Payment Link ב-Stripe Dashboard, הדבקי את ה-URL כאן
+// ══════════════════════════════════════════════
+
 const DEFAULT_DATA = {
   drawNumber:3904, date:'10/03/2026',
   numbers:[19,20,23,24,31,33], strongNumber:6,
@@ -381,16 +435,13 @@ async function runAnalysis(){
     claudeCall(
       `You are analyzing Israel Pais Lotto history (balls 1-37, strong number 1-7).
        Draw history (oldest→newest): ${JSON.stringify(history.slice(-20))}
-
        For each number 1-37, calculate:
        - frequency: how many times it appeared in the history
        - gap: how many draws since it last appeared (0 = appeared in last draw)
-
        Then pick 6 numbers + 1 strong number using strategy "${strat}":
        - "hot": pick the 6 numbers with highest frequency. strong = most frequent in 1-7 range.
        - "due": pick the 6 numbers with the highest gap (longest absent). strong = highest gap in 1-7 range.
-       - "smart": pick a balanced mix — 3 with high frequency AND high gap (appeared often but not recently), 3 with moderate frequency. strong = balance of frequency+gap in 1-7 range.
-
+       - "smart": pick a balanced mix — 3 with high frequency AND high gap, 3 with moderate frequency. strong = balance of frequency+gap in 1-7 range.
        Do real calculations on the actual history data provided.
        YOU MUST return ONLY raw JSON, no markdown, no explanation:
        {"numbers":[6 distinct sorted ints 1-37],"strong":<1-7>,"reasons":["one short Hebrew reason per number based on its actual stats",...6 items]}`,
@@ -455,9 +506,34 @@ async function runAnalysis(){
   running=false;
 }
 
+// ══════════ Stripe Payment Logic ══════════
+
+function onStripeClick(){
+  ga('click','stripe_payment_start', 5);
+  // עדכן את ה-href של הקישור עם הפרמטר הנוכחי
+  const link = document.getElementById('stripe-link');
+  link.href = STRIPE_PAYMENT_LINK;
+  // הצג כפתור "שילמתי" לאחר 2 שניות
+  setTimeout(()=>{
+    document.getElementById('confirm-wrap').style.display = 'block';
+  }, 2000);
+}
+
+function revealAfterPayment(){
+  ga('purchase','stripe_reveal', 5);
+  document.getElementById('modal-form').classList.add('hide');
+  document.getElementById('modal-success').classList.add('show');
+  setTimeout(()=>{
+    closeModal();
+    revealNumbers();
+    document.getElementById('modal-success').classList.remove('show');
+    document.getElementById('modal-form').classList.remove('hide');
+    document.getElementById('confirm-wrap').style.display = 'none';
+  }, 1800);
+}
+
 function revealNumbers(){
   if(revealed)return;revealed=true;
-  ga('purchase','reveal',5);
   document.querySelectorAll('.why-mini-locked').forEach((m,i)=>{
     if(_nums[i]!==undefined){m.textContent=_nums[i];m.classList.remove('why-mini-locked');}
   });
@@ -467,25 +543,18 @@ function revealNumbers(){
   document.getElementById('strong-hint').textContent='☝️ מספר חזק';
   document.getElementById('blur-overlay').classList.add('hidden');
 }
-function openModal(){ga('click','open_payment');document.getElementById('modal-bg').classList.add('open');document.getElementById('modal-form').classList.remove('hide');document.getElementById('modal-success').classList.remove('show');}
+
+function openModal(){
+  ga('click','open_payment');
+  document.getElementById('confirm-wrap').style.display = 'none';
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('modal-form').classList.remove('hide');
+  document.getElementById('modal-success').classList.remove('show');
+}
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function bgClose(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
-function simulatePay(){
-  ga('click','payment_start',5);
-  const btn=document.getElementById('pay-now-btn');
-  btn.textContent='⏳ מעבד...';btn.disabled=true;
-  setTimeout(()=>{
-    document.getElementById('modal-form').classList.add('hide');
-    document.getElementById('modal-success').classList.add('show');
-    setTimeout(()=>{
-      closeModal();revealNumbers();
-      btn.textContent='💳 שלם ₪5 עכשיו';btn.disabled=false;
-      document.getElementById('modal-success').classList.remove('show');
-    },1800);
-  },1500);
-}
 
 init();
 </script>
 </body>
-        </html>
+</html>
