@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1340a0"/>
+      <stop offset="100%" style="stop-color:#3d8fe0"/>
+    </linearGradient>
+    <radialGradient id="b1" cx="38%" cy="35%">
+      <stop offset="0%" style="stop-color:#ff6b6b"/>
+      <stop offset="55%" style="stop-color:#e53935"/>
+      <stop offset="100%" style="stop-color:#b71c1c"/>
+    </radialGradient>
+    <radialGradient id="b2" cx="38%" cy="35%">
+      <stop offset="0%" style="stop-color:#90caf9"/>
+      <stop offset="55%" style="stop-color:#42a5f5"/>
+      <stop offset="100%" style="stop-color:#1565c0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle grid pattern -->
+  <rect width="1200" height="630" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+  <!-- Balls row -->
+  <circle cx="220" cy="260" r="72" fill="url(#b1)"/>
+  <text x="220" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="white">7</text>
+
+  <circle cx="390" cy="260" r="72" fill="url(#b1)"/>
+  <text x="390" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="white">14</text>
+
+  <circle cx="560" cy="260" r="72" fill="url(#b1)"/>
+  <text x="560" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="white">21</text>
+
+  <circle cx="730" cy="260" r="72" fill="url(#b1)"/>
+  <text x="730" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="white">28</text>
+
+  <circle cx="900" cy="260" r="72" fill="url(#b1)"/>
+  <text x="900" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="52" font-weight="900" fill="white">33</text>
+
+  <!-- Strong ball -->
+  <circle cx="1050" cy="260" r="60" fill="url(#b2)"/>
+  <text x="1050" y="278" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="44" font-weight="900" fill="white">5</text>
+  <text x="1050" y="340" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="rgba(255,255,255,0.8)">חזק</text>
+
+  <!-- Title -->
+  <text x="600" y="110" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="72" font-weight="900" fill="white">לוטו חכם 🎱</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-size="38" fill="rgba(255,255,255,0.9)">מספרים מבוססי סטטיסטיקה</text>
+
+  <!-- URL -->
+  <text x="600" y="560" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="rgba(255,255,255,0.55)">www.lotoisrael.com</text>
+</svg>
