@@ -216,7 +216,7 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
         לאחר תשלום Stripe תפנה אוטומטית לדף success_url שתגדיר שם.
       -->
       <a id="stripe-link"
-         href="https://buy.stripe.com/test_5kQdR93Er42915meqn9Zm00"
+         href="https://buy.stripe.com/test_5kQdR93Er42915meqn9Zm00?success_url=https%3A%2F%2Fwww.lotoisrael.com%2F%3Fpayment%3Dsuccess"
          target="_blank"
          class="stripe-pay-btn"
          onclick="onStripeClick()">
@@ -224,14 +224,7 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
         <span class="stripe-logo">| Stripe</span>
       </a>
 
-      <!-- כפתור "שילמתי" — המשתמש לוחץ אחרי חזרה מ-Stripe -->
-      <div id="confirm-wrap" style="display:none;margin-top:12px">
-        <div style="font-size:12px;color:#888;margin-bottom:8px">סיימת את התשלום? לחצ/י לחשיפה:</div>
-        <button onclick="revealAfterPayment()"
-          style="width:100%;padding:12px;background:#43a047;color:#fff;border:none;border-radius:50px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:900;cursor:pointer">
-          ✅ חשוף את המספרים
-        </button>
-      </div>
+
 
       <div class="stripe-badge">
         <svg viewBox="0 0 60 25" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -508,32 +501,17 @@ async function runAnalysis(){
 
 // ══════════ Stripe Payment Logic ══════════
 
+const PENDING_KEY = 'loto_pending_reveal';
+
 function onStripeClick(){
   ga('click','stripe_payment_start', 5);
-  // עדכן את ה-href של הקישור עם הפרמטר הנוכחי
-  const link = document.getElementById('stripe-link');
-  link.href = STRIPE_PAYMENT_LINK;
-  // הצג כפתור "שילמתי" לאחר 2 שניות
-  setTimeout(()=>{
-    document.getElementById('confirm-wrap').style.display = 'block';
-  }, 2000);
-}
-
-function revealAfterPayment(){
-  ga('purchase','stripe_reveal', 5);
-  document.getElementById('modal-form').classList.add('hide');
-  document.getElementById('modal-success').classList.add('show');
-  setTimeout(()=>{
-    closeModal();
-    revealNumbers();
-    document.getElementById('modal-success').classList.remove('show');
-    document.getElementById('modal-form').classList.remove('hide');
-    document.getElementById('confirm-wrap').style.display = 'none';
-  }, 1800);
+  localStorage.setItem(PENDING_KEY, JSON.stringify({
+    nums: _nums, strong: _strong, reasons: _reasons, ts: Date.now()
+  }));
 }
 
 function revealNumbers(){
-  if(revealed)return;revealed=true;
+  if(revealed)return; revealed=true;
   document.querySelectorAll('.why-mini-locked').forEach((m,i)=>{
     if(_nums[i]!==undefined){m.textContent=_nums[i];m.classList.remove('why-mini-locked');}
   });
@@ -544,9 +522,71 @@ function revealNumbers(){
   document.getElementById('blur-overlay').classList.add('hidden');
 }
 
+function checkReturnFromStripe(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('payment') !== 'success') return;
+
+  const raw = localStorage.getItem(PENDING_KEY);
+  if(!raw) return;
+
+  let pending;
+  try{ pending = JSON.parse(raw); } catch{ return; }
+
+  if(Date.now() - pending.ts > 30*60*1000){
+    localStorage.removeItem(PENDING_KEY); return;
+  }
+
+  _nums = pending.nums;
+  _strong = pending.strong;
+  _reasons = pending.reasons;
+
+  const waitAndReveal = () => {
+    if(!dataReady){ setTimeout(waitAndReveal, 200); return; }
+
+    const rb = document.getElementById('result-balls');
+    rb.innerHTML = '';
+    _nums.forEach((n,i)=>{
+      const b=document.createElement('div');
+      b.className='rball rball-red'; b.textContent=String(n);
+      b.style.animationDelay=i*.08+'s'; rb.appendChild(b);
+    });
+    const pl=document.createElement('span');
+    pl.className='plus-sep'; pl.textContent='+'; rb.appendChild(pl);
+    const sb=document.createElement('div');
+    sb.className='rball rball-blue'; sb.textContent=String(_strong);
+    sb.style.animationDelay='.55s'; rb.appendChild(sb);
+
+    const wg=document.getElementById('why-grid');
+    wg.innerHTML='';
+    _nums.forEach((n,i)=>{
+      const pct=55+Math.floor(Math.random()*45);
+      const c=document.createElement('div'); c.className='why-card';
+      c.dataset.num=n; c.dataset.reason=_reasons[i]||'';
+      c.innerHTML=`<div class="why-ball-row"><div class="why-mini">${n}</div></div>
+        <div class="why-reason">${_reasons[i]||''}</div>
+        <div class="why-bar"><div class="why-fill" data-w="${pct}"></div></div>`;
+      wg.appendChild(c);
+    });
+
+    document.getElementById('result-wrap').classList.add('show');
+    document.getElementById('blur-overlay').classList.add('hidden');
+    document.getElementById('strong-hint').textContent='☝️ מספר חזק';
+    revealed=true;
+    localStorage.removeItem(PENDING_KEY);
+    setTimeout(()=>document.querySelectorAll('.why-fill[data-w]').forEach(b=>b.style.width=b.dataset.w+'%'),80);
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const banner=document.createElement('div');
+    banner.style.cssText='position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#43a047;color:#fff;padding:13px 28px;border-radius:50px;font-family:Heebo,sans-serif;font-size:15px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:9999;animation:bpop .4s cubic-bezier(.34,1.56,.64,1)';
+    banner.textContent='✅ התשלום התקבל! המספרים חשופים';
+    document.body.appendChild(banner);
+    setTimeout(()=>banner.remove(), 3500);
+  };
+  waitAndReveal();
+}
+
 function openModal(){
   ga('click','open_payment');
-  document.getElementById('confirm-wrap').style.display = 'none';
   document.getElementById('modal-bg').classList.add('open');
   document.getElementById('modal-form').classList.remove('hide');
   document.getElementById('modal-success').classList.remove('show');
@@ -554,6 +594,7 @@ function openModal(){
 function closeModal(){document.getElementById('modal-bg').classList.remove('open');}
 function bgClose(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
 
+checkReturnFromStripe();
 init();
 </script>
 </body>
