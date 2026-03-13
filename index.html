@@ -123,7 +123,7 @@ body{font-family:'Heebo',sans-serif;background:#f0f2f5;color:#1a1a1a;direction:r
 </div>
 
 <div class="smart-card">
-  <div class="smart-title">🎯 צור מספרים עם סיכוי לזכות</div>
+  <div class="smart-title">🎯 צור מספרים מבוססי סטטיסטיקה</div>
   <div class="smart-sub" id="smart-sub">טוען נתונים...</div>
   <div style="font-size:11px;color:#e53935;font-weight:700;text-align:center;margin-top:-10px;margin-bottom:10px" id="next-draw-label"></div>
   <div class="strat-grid">
@@ -371,11 +371,21 @@ async function runAnalysis(){
   const history=currentData?.history||DEFAULT_DATA.history;
   const [pick]=await Promise.all([
     claudeCall(
-      `Israel Pais Lotto number picker (balls 1-37, strong number 1-7).
-       Recent draw history (oldest→newest): ${JSON.stringify(history.slice(-20))}
-       Strategy: "${strat}" (smart=frequency+gap balance, hot=most frequent, due=longest gap)
+      `You are analyzing Israel Pais Lotto history (balls 1-37, strong number 1-7).
+       Draw history (oldest→newest): ${JSON.stringify(history.slice(-20))}
+
+       For each number 1-37, calculate:
+       - frequency: how many times it appeared in the history
+       - gap: how many draws since it last appeared (0 = appeared in last draw)
+
+       Then pick 6 numbers + 1 strong number using strategy "${strat}":
+       - "hot": pick the 6 numbers with highest frequency. strong = most frequent in 1-7 range.
+       - "due": pick the 6 numbers with the highest gap (longest absent). strong = highest gap in 1-7 range.
+       - "smart": pick a balanced mix — 3 with high frequency AND high gap (appeared often but not recently), 3 with moderate frequency. strong = balance of frequency+gap in 1-7 range.
+
+       Do real calculations on the actual history data provided.
        YOU MUST return ONLY raw JSON, no markdown, no explanation:
-       {"numbers":[6 distinct sorted ints 1-37],"strong":<1-7>,"reasons":["Hebrew reason",...6 items]}`,
+       {"numbers":[6 distinct sorted ints 1-37],"strong":<1-7>,"reasons":["one short Hebrew reason per number based on its actual stats",...6 items]}`,
       false
     ).then(raw=>{
       const j=extractJSON(raw);
